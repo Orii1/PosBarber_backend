@@ -5,74 +5,62 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Services\UserService;
+use App\Http\Resources\UserResource;
+
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+
+    protected $userService;
+
+    public function __construct(UserService $userService)
     {
-       $query = User::query();
-
-        if ($request->has('role')) {
-            $query->where('role', $request->role);
-        }
-
-        return $query->get();
+        $this->userService = $userService;
     }
 
-    public function store(Request $request)
+    // public function index(Request $request)
+    // {
+    //     return UserResource::collection(
+    //         $this->userService->getAll($request)
+    //     );
+    // }
+
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
-            'password' => 'required|string|min:6',
-            'role'     => 'required|in:admin,barber,cashier,customer',
-            'phone'    => 'nullable|string|max:20',
-        ]);
+        $user = $this->userService->create($request->validated());
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'role'     => $request->role,
-            'phone'    => $request->phone,
+        return response()->json([
+            'message' => 'User berhasil ditambahkan',
+            'data' => new UserResource($user)
         ]);
-
-        return response()->json(['message' => 'User berhasil ditambahkan', 'user' => $user]);
     }
 
     public function show($id)
     {
-        return User::findOrFail($id);
+        $user = $this->userService->find($id);
+
+        return new UserResource($user);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->userService->update($request->validated(), $id);
 
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => "required|email|unique:users,email,{$id}",
-            'role'     => 'required|in:admin,barber,cashier,customer',
-            'phone'    => 'nullable|string|max:20',
+        return response()->json([
+            'message' => 'User berhasil diubah',
+            'data' => new UserResource($user)
         ]);
-
-        $user->update([
-            'name'  => $request->name,
-            'email' => $request->email,
-            'role'  => $request->role,
-            'phone' => $request->phone,
-        ]);
-
-        return response()->json(['message' => 'User berhasil diubah']);
     }
 
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
+        $this->userService->delete($id);
 
-        return response()->json(['message' => 'User berhasil dihapus']);
+        return response()->json([
+            'message' => 'User berhasil dihapus'
+        ]);
     }
 }
-
