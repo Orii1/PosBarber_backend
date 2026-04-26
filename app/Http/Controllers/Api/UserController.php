@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Services\UserService;
 use App\Http\Resources\UserResource;
-
+use Illuminate\Support\Facades\Request;
 
 class UserController extends Controller
 {
@@ -21,12 +19,12 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    // public function index(Request $request)
-    // {
-    //     return UserResource::collection(
-    //         $this->userService->getAll($request)
-    //     );
-    // }
+    public function index(Request $request)
+    {
+        $users = $this->userService->getAll($request);
+
+        return UserResource::collection($users);
+    }
 
     public function store(StoreUserRequest $request)
     {
