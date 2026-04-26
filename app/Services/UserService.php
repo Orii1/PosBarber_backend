@@ -18,11 +18,25 @@ class UserService
     {
         $query = User::query();
 
-        if ($request->has('role')) {
+        // 🔍 filter role
+        if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
 
-        return $query->get();
+        // 🔎 search name/email
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // 📄 pagination
+        $perPage = $request->get('per_page', 5);
+
+        return $query->paginate($perPage);
     }
 
     public function update(array $data, $id)

@@ -1,11 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\BookingAdminController;
-use App\Http\Controllers\Api\BookingController;
-use App\Http\Controllers\Api\ServiceController;
-use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\TransactionsController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\RoleMiddleware;
@@ -18,8 +13,18 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 // Route::put('/users/{id}', [UserController::class, 'update']);
 Route::apiResource('users', UserController::class);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/transactions',[TransactionsController::class, 'store']);
 
+Route::middleware(['auth:sanctum'])->group(function () {
 
+    Route::middleware('role:admin')->group(function () {
+        Route::apiResource('users', UserController::class);
+    });
+
+    Route::middleware('role:admin,cashier')->group(function () {
+        Route::apiResource('transactions', TransactionsController::class);
+    });
+});
 // Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin'])->prefix('admin')->group(function () {
 //     Route::get('/users', [UserController::class, 'index']);
 //     // Route::post('/users', [UserController::class, 'store']);

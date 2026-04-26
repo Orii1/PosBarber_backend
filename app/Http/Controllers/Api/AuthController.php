@@ -5,44 +5,39 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+
 
 class AuthController extends Controller
 {
+
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function login(Request $request)
     {
-        // dd('masuk');
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required'
-        ]);
+        $data = $this->authService->login(
+            $request->only('email', 'password')
+        );
 
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Email atau password salah'],
-            ]);
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-        
         return response()->json([
             'message' => 'Login berhasil',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'token'   => $data['token'],
+            'user'    => $data['user'],
         ]);
     }
 
     public function logout(Request $request)
     {
-        // Hapus token yang sedang dipakai
-        $request->user()->currentAccessToken()->delete();
+        $this->authService->logout($request->user());
 
         return response()->json([
             'message' => 'Logout berhasil'
